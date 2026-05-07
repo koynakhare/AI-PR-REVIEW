@@ -49,33 +49,33 @@ function asFileComments(v: unknown): { filename: string; comment: string }[] {
 }
 
 export async function generateOpenAiPrReview(input: ReviewInput): Promise<AiReview> {
-  const provider = (env.AI_PROVIDER ?? "").toLowerCase();
-  const apiKey = env.AI_API_KEY;
-  const model = env.AI_MODEL ?? "gpt-4o-mini";
-
-  if (provider && provider !== "openai") {
+  const providerRaw = (env.AI_PROVIDER ?? "openai").toLowerCase();
+  if (providerRaw !== "openai" && providerRaw !== "groq") {
     return {
       provider: "openai",
-      model,
+      model: env.AI_MODEL ?? "gpt-4o-mini",
       generatedAt: new Date().toISOString(),
       summary: "",
       risks: [],
       suggestions: [],
       fileComments: [],
-      error: `AI_PROVIDER is '${env.AI_PROVIDER}', not 'openai'`,
+      error: `Unsupported AI_PROVIDER '${env.AI_PROVIDER}'`,
     };
   }
+  const provider: "openai" | "groq" = providerRaw;
+  const apiKey = provider === "groq" ? (env.GROQ_API_KEY ?? env.AI_API_KEY) : env.AI_API_KEY;
+  const model = env.AI_MODEL ?? (provider === "groq" ? "llama-3.1-8b-instant" : "gpt-4o-mini");
 
   if (!apiKey) {
     return {
-      provider: "openai",
+      provider,
       model,
       generatedAt: new Date().toISOString(),
       summary: "",
       risks: [],
       suggestions: [],
       fileComments: [],
-      error: "Missing AI_API_KEY",
+      error: provider === "groq" ? "Missing GROQ_API_KEY (or AI_API_KEY fallback)" : "Missing AI_API_KEY",
     };
   }
 
@@ -113,7 +113,7 @@ export async function generateOpenAiPrReview(input: ReviewInput): Promise<AiRevi
   ].join("\n");
 
   const client = axios.create({
-    baseURL: "https://api.openai.com/v1",
+    baseURL: provider === "groq" ? "https://api.groq.com/openai/v1" : "https://api.openai.com/v1",
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
@@ -144,19 +144,19 @@ export async function generateOpenAiPrReview(input: ReviewInput): Promise<AiRevi
 
   if (!summary) {
     return {
-      provider: "openai",
+      provider,
       model,
       generatedAt: new Date().toISOString(),
       summary: "",
       risks: [],
       suggestions: [],
       fileComments: [],
-      error: "OpenAI response was not valid JSON in expected shape",
+      error: `${provider} response was not valid JSON in expected shape`,
     };
   }
 
   return {
-    provider: "openai",
+    provider,
     model,
     generatedAt: new Date().toISOString(),
     summary,

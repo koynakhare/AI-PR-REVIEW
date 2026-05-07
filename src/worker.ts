@@ -1,4 +1,5 @@
 import { Worker } from "bullmq";
+import { env } from "./config/env";
 import { getRedis } from "./config/redis";
 import { FetchPrJob } from "./queues/prFetchQueue";
 import { fetchPullRequest, fetchPullRequestFiles } from "./integrations/github/githubClient";
@@ -13,12 +14,13 @@ async function main(): Promise<void> {
     "pr-fetch",
     async (job) => {
       const { repoFullName, prNumber, prUrl } = job.data;
+      console.log("job", job);
 
       const pr = await fetchPullRequest(repoFullName, prNumber);
+
       const headSha = job.data.headSha ?? pr.head.sha;
 
       const files = await fetchPullRequestFiles(repoFullName, prNumber);
-
       let aiReview: AiReview | undefined;
       try {
         aiReview = await generateOpenAiPrReview({
@@ -37,15 +39,16 @@ async function main(): Promise<void> {
           })),
         });
       } catch (e) {
+        const provider = (env.AI_PROVIDER ?? "openai").toLowerCase() === "groq" ? "groq" : "openai";
         aiReview = {
-          provider: "openai",
+          provider,
           model: "unknown",
           generatedAt: new Date().toISOString(),
           summary: "",
           risks: [],
           suggestions: [],
           fileComments: [],
-          error: e instanceof Error ? e.message : "Unknown OpenAI error",
+          error: e instanceof Error ? e.message : `Unknown ${provider} error`,
         } satisfies AiReview;
       }
 
@@ -72,6 +75,7 @@ async function main(): Promise<void> {
     { connection: getRedis() },
   );
 
+
   worker.on("completed", (job, result) => {
     // eslint-disable-next-line no-console
     console.log(`Job ${job.id} completed`, result);
@@ -79,7 +83,7 @@ async function main(): Promise<void> {
 
   worker.on("failed", (job, err) => {
     // eslint-disable-next-line no-console
-    console.error(`Job ${job?.id} failed`, err);
+    console.log(`Job ${job?.id} failed`, err);
   });
 }
 

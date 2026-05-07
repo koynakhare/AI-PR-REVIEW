@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 
-const DEFAULT_PR_URL = "https://github.com/owner/repo/pull/123";
+const DEFAULT_PR_URL = "https://github.com/koynakhare/AI-PR-REVIEW/pull/1";
 
 function prettyJson(value) {
   try {
@@ -68,7 +68,7 @@ export default function test() {
           id="prUrl"
           value={prUrl}
           onChange={(e) => setPrUrl(e.target.value)}
-          placeholder="https://github.com/owner/repo/pull/123"
+          placeholder="https://github.com/koynakhare/AI-PR-REVIEW/pull/1"
         />
 
         <div className="actions">

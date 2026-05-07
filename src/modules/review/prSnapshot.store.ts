@@ -15,7 +15,7 @@ export type AiFileComment = {
 };
 
 export type AiReview = {
-  provider: "openai";
+  provider: "openai" | "groq";
   model: string;
   generatedAt: string;
   summary: string;

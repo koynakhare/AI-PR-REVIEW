@@ -51,6 +51,7 @@ reviewsRouter.get("/snapshot", async (req, res) => {
     prNumber: parsed.prNumber,
     headSha,
   });
+  console.log("snapshot", snapshot);
 
   if (!snapshot) {
     return res.status(404).json({

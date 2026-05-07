@@ -13,6 +13,7 @@ let queue: Queue<FetchPrJob> | null = null;
 
 /** Lazy so the API process can boot before Redis is running; connects on first enqueue. */
 export function getPrFetchQueue(): Queue<FetchPrJob> {
+  console.log("getPrFetchQueue");
   if (!queue) {
     queue = new Queue<FetchPrJob>("pr-fetch", { connection: getRedis() });
   }
