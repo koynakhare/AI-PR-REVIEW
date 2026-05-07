@@ -10,6 +10,7 @@ export type AppEnv = {
   GITHUB_TOKEN?: string;
   AI_PROVIDER?: string;
   AI_API_KEY?: string;
+  AI_MODEL?: string;
 };
 
 function required(name: string): string {
@@ -31,5 +32,6 @@ export const env: AppEnv = {
   GITHUB_TOKEN: optional("GITHUB_TOKEN"),
   AI_PROVIDER: optional("AI_PROVIDER"),
   AI_API_KEY: optional("AI_API_KEY"),
+  AI_MODEL: optional("AI_MODEL"),
 };
 
