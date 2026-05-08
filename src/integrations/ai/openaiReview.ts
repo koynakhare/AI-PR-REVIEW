@@ -11,6 +11,14 @@ type ReviewInput = {
   files: PrFileSnapshot[];
 };
 
+function formatProviderError(provider: "openai" | "groq", status?: number, detail?: string): string {
+  const prefix = status ? `${provider.toUpperCase()} ${status}` : `${provider.toUpperCase()} error`;
+  if (status === 429) {
+    return `${prefix}: Rate limit/quota exceeded. Check your API key, billing/quota, and try again shortly.${detail ? ` Details: ${detail}` : ""}`;
+  }
+  return `${prefix}${detail ? `: ${detail}` : ""}`;
+}
+
 function truncate(s: string, max: number): string {
   if (s.length <= max) return s;
   return `${s.slice(0, max)}\n...[truncated ${s.length - max} chars]`;
@@ -63,7 +71,10 @@ export async function generateOpenAiPrReview(input: ReviewInput): Promise<AiRevi
     };
   }
   const provider: "openai" | "groq" = providerRaw;
-  const apiKey = provider === "groq" ? (env.GROQ_API_KEY ?? env.AI_API_KEY) : env.AI_API_KEY;
+  const apiKey =
+    provider === "groq"
+      ? (env.GROQ_API_KEY ?? env.AI_API_KEY)
+      : (env.OPENAI_API_KEY ?? env.AI_API_KEY);
   const model = env.AI_MODEL ?? (provider === "groq" ? "llama-3.1-8b-instant" : "gpt-4o-mini");
 
   if (!apiKey) {
@@ -75,7 +86,10 @@ export async function generateOpenAiPrReview(input: ReviewInput): Promise<AiRevi
       risks: [],
       suggestions: [],
       fileComments: [],
-      error: provider === "groq" ? "Missing GROQ_API_KEY (or AI_API_KEY fallback)" : "Missing AI_API_KEY",
+      error:
+        provider === "groq"
+          ? "Missing GROQ_API_KEY (or AI_API_KEY fallback)"
+          : "Missing OPENAI_API_KEY (or AI_API_KEY fallback)",
     };
   }
 
@@ -121,14 +135,45 @@ export async function generateOpenAiPrReview(input: ReviewInput): Promise<AiRevi
     timeout: 60_000,
   });
 
-  const { data } = await client.post("/chat/completions", {
-    model,
-    temperature: 0.2,
-    messages: [
-      { role: "system", content: system },
-      { role: "user", content: JSON.stringify(userPayload) },
-    ],
-  });
+  let data: any;
+  try {
+    const resp = await client.post("/chat/completions", {
+      model,
+      temperature: 0.2,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: JSON.stringify(userPayload) },
+      ],
+    });
+    data = resp.data;
+  } catch (e) {
+    if (axios.isAxiosError(e)) {
+      const status = e.response?.status;
+      const detail =
+        (e.response?.data as any)?.error?.message ??
+        (typeof e.message === "string" ? e.message : undefined);
+      return {
+        provider,
+        model,
+        generatedAt: new Date().toISOString(),
+        summary: "",
+        risks: [],
+        suggestions: [],
+        fileComments: [],
+        error: formatProviderError(provider, status, detail),
+      };
+    }
+    return {
+      provider,
+      model,
+      generatedAt: new Date().toISOString(),
+      summary: "",
+      risks: [],
+      suggestions: [],
+      fileComments: [],
+      error: e instanceof Error ? e.message : `Unknown ${provider} error`,
+    };
+  }
 
   const text: string =
     data?.choices?.[0]?.message?.content ??

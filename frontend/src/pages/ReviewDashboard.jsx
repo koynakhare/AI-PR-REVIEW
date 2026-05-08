@@ -9,7 +9,7 @@ import RisksCard from "../components/review/RisksCard";
 import SuggestionsCard from "../components/review/SuggestionsCard";
 import FileCommentsAccordion from "../components/review/FileCommentsAccordion";
 
-const DEFAULT_PR_URL = "https://github.com/owner/repo/pull/123";
+const DEFAULT_PR_URL = "";
 const GITHUB_PR_REGEX = /^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+\/?$/i;
 
 export default function ReviewDashboard() {
