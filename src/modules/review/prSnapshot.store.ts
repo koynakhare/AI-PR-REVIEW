@@ -9,6 +9,22 @@ export type PrFileSnapshot = {
   patch?: string;
 };
 
+export type AiFileComment = {
+  filename: string;
+  comment: string;
+};
+
+export type AiReview = {
+  provider: "openai" | "groq";
+  model: string;
+  generatedAt: string;
+  summary: string;
+  risks: string[];
+  suggestions: string[];
+  fileComments: AiFileComment[];
+  error?: string;
+};
+
 export type PrSnapshot = {
   provider: "github";
   repoFullName: string;
@@ -17,6 +33,7 @@ export type PrSnapshot = {
   headSha: string;
   files: PrFileSnapshot[];
   fetchedAt: string;
+  aiReview?: AiReview;
 };
 
 const SNAPSHOT_TTL_SECONDS = 60 * 60 * 24 * 7;

@@ -4,6 +4,8 @@ import { env } from "../../config/env";
 export type GitHubPullRequest = {
   number: number;
   html_url: string;
+  title?: string;
+  body?: string | null;
   head: { sha: string };
   base: { repo: { full_name: string } };
 };
