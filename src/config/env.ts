@@ -10,6 +10,7 @@ export type AppEnv = {
   GITHUB_TOKEN?: string;
   AI_PROVIDER?: string;
   AI_API_KEY?: string;
+  OPENAI_API_KEY?: string;
   GROQ_API_KEY?: string;
   AI_MODEL?: string;
 };
@@ -33,6 +34,7 @@ export const env: AppEnv = {
   GITHUB_TOKEN: optional("GITHUB_TOKEN"),
   AI_PROVIDER: optional("AI_PROVIDER"),
   AI_API_KEY: optional("AI_API_KEY"),
+  OPENAI_API_KEY: optional("OPENAI_API_KEY"),
   GROQ_API_KEY: optional("GROQ_API_KEY"),
   AI_MODEL: optional("AI_MODEL"),
 };
